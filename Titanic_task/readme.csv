@@ -1,0 +1,167 @@
+TITANIC CLASSIFICATION:
+Make a system which tells whether the person
+will be save from sinking. What factors were
+most likely lead to success-socio-economic
+status, age, gender and more.
+
+Introduction:
+In this project, we are using data from the Titanic disaster to predict which passengers were likely to survive. 
+We use a method called machine learning to build a model that can make these predictions based on the passengers' information.
+
+1. Loading the Data:
+We start by loading the passenger data from a file into a structure called a DataFrame, which is like a table.
+
+```python
+import pandas as pd
+
+# Load the training data
+train_data = pd.read_csv('train.csv')
+```
+
+2. Handling Missing Values:
+The data has some missing values. We need to handle these gaps to ensure our analysis is accurate.
+
+```python
+# Check if there are nan values
+print(train_data.isnull().sum())
+
+# Handle missing values
+train_data['Age'] = train_data['Age'].fillna(train_data['Age'].median())
+train_data = train_data.drop(columns=['Cabin'])
+train_data['Embarked'] = train_data['Embarked'].fillna(train_data['Embarked'].mode()[0])
+```
+
+- We fill missing ages with the median age.
+- We drop the 'Cabin' column because it has too many missing values.
+- We fill missing 'Embarked' values with the most common value.
+
+3. Converting Categorical Data:
+Next, we convert text data into numbers because our model needs numerical input.
+
+```python
+# Convert categorical columns to numerical
+train_data['Sex'] = train_data['Sex'].map({'male': 0, 'female': 1}).astype(int)
+train_data = pd.get_dummies(train_data, columns=['Embarked'], drop_first=True)
+```
+
+- We convert 'Sex' to 0 for males and 1 for females.
+- We convert 'Embarked' to numerical values using one-hot encoding.
+
+4. Data Visualization:
+We visualize the data to understand how different factors relate to survival rates.
+
+```python
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Plot the relationship between Sex and Survived
+sns.countplot(data=train_data, x='Sex', hue='Survived')
+plt.show()
+
+# Plot the relationship between Pclass and Survived
+sns.countplot(data=train_data, x='Pclass', hue='Survived')
+plt.show()
+
+# Plot the relationship between Age and Survived
+sns.histplot(data=train_data, x='Age', hue='Survived', multiple='stack')
+plt.show()
+```
+
+- These plots show survival rates by gender, class, and age, helping us understand the data better.
+
+5. Preparing the Data:
+We select the relevant features (information) and split the data into two parts: one for training the model and one for testing it.
+
+```python
+from sklearn.model_selection import train_test_split
+
+# Select features and target
+features = train_data.drop(columns=['PassengerId', 'Name', 'Ticket', 'Survived'])
+target = train_data['Survived']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.2, random_state=42)
+```
+
+6. Building and Training the Model:
+We use a Logistic Regression model, which is suitable for predicting outcomes like survival.
+
+```python
+from sklearn.linear_model import LogisticRegression
+
+# Create the Logistic Regression model
+model = LogisticRegression(max_iter=200)
+
+# Train the model on the training data
+model.fit(X_train, y_train)
+```
+
+7. Making Predictions:
+We ask the model to predict survival for the test data and check how accurate it is.
+
+```python
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+
+# Generate confusion matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+# Generate classification report
+class_report = classification_report(y_test, y_pred)
+
+print(f"Accuracy: {accuracy}")
+print("Confusion Matrix:")
+print(conf_matrix)
+print("Classification Report:")
+print(class_report)
+```
+
+- We get an accuracy score, a confusion matrix, and a classification report to evaluate the model's performance.
+
+8. Processing the Test Data:
+We prepare the actual test data similarly to the training data.
+
+```python
+# Load the test data
+test_data = pd.read_csv('test.csv')
+
+# Check for nan values
+print(test_data.isnull().sum())
+
+# Preprocess the test data
+test_data['Age'] = test_data['Age'].fillna(test_data['Age'].median())
+test_data['Fare'] = test_data['Fare'].fillna(test_data['Fare'].median())
+test_data = test_data.drop(columns=['Cabin'])
+test_data['Sex'] = test_data['Sex'].map({'male': 0, 'female': 1})
+test_data = pd.get_dummies(test_data, columns=['Embarked'], drop_first=True)
+
+# Ensure the same columns as in the training data
+missing_cols = set(features.columns) - set(test_data.columns)
+for col in missing_cols:
+    test_data[col] = 0
+test_data = test_data[features.columns]
+```
+
+9. Preparing Submission:
+Finally, we make predictions on the test data and prepare a file to submit.
+
+```python
+# Make predictions on the test set
+test_predictions = model.predict(test_data)
+
+# Prepare the submission file
+submission = pd.DataFrame({'PassengerId': test_data.index + 892, 'Survived': test_predictions})
+submission.to_csv('submission.csv', index=False)
+
+print("Check the file")
+```
+
+Summary:
+Through this process, we use data preprocessing, visualization, and machine learning to build a model that predicts who might survive the Titanic disaster. 
+We clean the data, convert text to numbers, visualize relationships, and train a Logistic Regression model to make our predictions. 
+Then, we evaluate our model's accuracy and prepare a submission file with our results.
